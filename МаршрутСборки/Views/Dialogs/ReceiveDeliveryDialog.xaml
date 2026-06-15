@@ -1,0 +1,83 @@
+﻿<Window x:Class="МаршрутСборки.Views.Dialogs.ReceiveDeliveryDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Приём поставки"
+        Height="380" Width="460"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="#F8FAFC">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Заголовок -->
+        <Border Grid.Row="0" Background="White"
+                BorderBrush="#E2E8F0" BorderThickness="0,0,0,1"
+                Padding="24,18">
+            <StackPanel>
+                <TextBlock Text="Приём поставки" FontSize="18"
+                           FontWeight="Bold" Foreground="#1E293B"/>
+                <TextBlock x:Name="ComponentNameText"
+                           FontSize="13" Foreground="#94A3B8"
+                           Margin="0,2,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Форма -->
+        <StackPanel Grid.Row="1" Margin="24,20">
+
+            <TextBlock Text="Количество *" FontSize="13"
+                       Foreground="#475569" Margin="0,0,0,6"/>
+            <Border Background="White" BorderBrush="#E2E8F0"
+                    BorderThickness="1" CornerRadius="8"
+                    Margin="0,0,0,16">
+                <TextBox x:Name="QuantityBox"
+                         Text="1" FontSize="14" Padding="12,10"
+                         BorderThickness="0" Background="Transparent"/>
+            </Border>
+
+            <TextBlock Text="Номер накладной" FontSize="13"
+                       Foreground="#475569" Margin="0,0,0,6"/>
+            <Border Background="White" BorderBrush="#E2E8F0"
+                    BorderThickness="1" CornerRadius="8"
+                    Margin="0,0,0,16">
+                <TextBox x:Name="DocumentRefBox"
+                         FontSize="14" Padding="12,10"
+                         BorderThickness="0" Background="Transparent"/>
+            </Border>
+
+            <TextBlock Text="Примечания" FontSize="13"
+                       Foreground="#475569" Margin="0,0,0,6"/>
+            <Border Background="White" BorderBrush="#E2E8F0"
+                    BorderThickness="1" CornerRadius="8">
+                <TextBox x:Name="NotesBox"
+                         FontSize="14" Padding="12,10"
+                         BorderThickness="0" Background="Transparent"
+                         TextWrapping="Wrap" AcceptsReturn="True"
+                         Height="60"/>
+            </Border>
+
+        </StackPanel>
+
+        <!-- Кнопки -->
+        <Border Grid.Row="2" Background="White"
+                BorderBrush="#E2E8F0" BorderThickness="0,1,0,0"
+                Padding="24,16">
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Right">
+                <Button Content="Отмена" IsCancel="True"
+                        Style="{StaticResource PrimaryButton}"
+                        Background="#F1F5F9" Foreground="#475569"
+                        Margin="0,0,10,0"/>
+                <Button Content="Принять"
+                        Click="Accept_Click"
+                        Style="{StaticResource PrimaryButton}"
+                        Background="#16A34A"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>
