@@ -142,9 +142,11 @@ namespace МаршрутСборки.ViewModels
 
         private void LoadComponents()
         {
+            // Свежий контекст чтобы не читать из кэша EF
+            var freshService = new ComponentService(new AppDbContext());
             var list = string.IsNullOrWhiteSpace(SearchText)
-                ? _componentService.GetAll()
-                : _componentService.Search(SearchText);
+                ? freshService.GetAll()
+                : freshService.Search(SearchText);
 
             Components = new ObservableCollection<Component>(list);
             OnPropertyChanged(nameof(LowStockCount));

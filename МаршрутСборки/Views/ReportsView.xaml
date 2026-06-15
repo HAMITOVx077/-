@@ -1,8 +1,7 @@
 <UserControl x:Class="МаршрутСборки.Views.ReportsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="clr-namespace:МаршрутСборки.ViewModels"
-             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF">
+             xmlns:vm="clr-namespace:МаршрутСборки.ViewModels">
     <UserControl.DataContext>
         <vm:ReportsViewModel/>
     </UserControl.DataContext>
@@ -231,15 +230,151 @@
                        FontSize="15" FontWeight="SemiBold"
                        Foreground="#1E293B" Margin="0,0,0,10"/>
 
-            <!-- График по сборщикам -->
+            <!-- График по сборщикам (кастомный WPF) -->
             <Border Grid.Row="1" Grid.Column="0"
                     Background="White" BorderBrush="#E2E8F0"
-                    BorderThickness="1" CornerRadius="12">
-                <lvc:CartesianChart Series="{Binding AssemblerSeries}"
-                                    XAxes="{Binding AssemblerXAxes}"
-                                    YAxes="{Binding YAxes}"
-                                    LegendPosition="Right"
-                                    Margin="8"/>
+                    BorderThickness="1" CornerRadius="12"
+                    Padding="14,12">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Нет данных -->
+                    <TextBlock Grid.Row="0"
+                               Text="Нет данных за выбранный период"
+                               FontSize="12" Foreground="#CBD5E1"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               Visibility="{Binding HasNoChartData,
+                                   Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                    <!-- Y-ось + столбики -->
+                    <Grid Grid.Row="0"
+                          Visibility="{Binding HasChartData,
+                              Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="28"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Подписи Y-оси -->
+                        <Canvas Grid.Column="0" Width="28" Height="110" VerticalAlignment="Top">
+                            <ItemsControl ItemsSource="{Binding YAxisLabels}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <Canvas/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemContainerStyle>
+                                    <Style TargetType="ContentPresenter">
+                                        <Setter Property="Canvas.Top" Value="{Binding TopOffset}"/>
+                                    </Style>
+                                </ItemsControl.ItemContainerStyle>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Text}"
+                                                   FontSize="10" Foreground="#94A3B8"
+                                                   Width="24" TextAlignment="Right"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Canvas>
+
+                        <!-- Полоса-разделитель слева от баров -->
+                        <Border Grid.Column="0" Width="1" Background="#E2E8F0"
+                                HorizontalAlignment="Right" Height="110" VerticalAlignment="Top"/>
+
+                        <!-- Столбики (горизонтальный скролл при большом числе сборщиков) -->
+                        <ScrollViewer Grid.Column="1"
+                                      HorizontalScrollBarVisibility="Auto"
+                                      VerticalScrollBarVisibility="Disabled">
+                            <ItemsControl ItemsSource="{Binding ChartGroups}" Margin="6,0,0,0">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Margin="4,0" Width="66">
+                                            <StackPanel.ToolTip>
+                                                <ToolTip>
+                                                    <StackPanel>
+                                                        <TextBlock Text="{Binding Name}" FontWeight="Bold" Margin="0,0,0,4"/>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Rectangle Width="10" Height="10" Fill="#3B82F6" Margin="0,0,6,0"/>
+                                                            <TextBlock><Run Text="Всего: "/><Run Text="{Binding Total.Value}"/></TextBlock>
+                                                        </StackPanel>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Rectangle Width="10" Height="10" Fill="#16A34A" Margin="0,0,6,0"/>
+                                                            <TextBlock><Run Text="Завершено: "/><Run Text="{Binding Completed.Value}"/></TextBlock>
+                                                        </StackPanel>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Rectangle Width="10" Height="10" Fill="#EF4444" Margin="0,0,6,0"/>
+                                                            <TextBlock><Run Text="Доработка: "/><Run Text="{Binding Rework.Value}"/></TextBlock>
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                </ToolTip>
+                                            </StackPanel.ToolTip>
+
+                                            <!-- Область столбиков, растут снизу вверх -->
+                                            <Grid Height="110" Background="Transparent">
+                                                <StackPanel Orientation="Horizontal"
+                                                            HorizontalAlignment="Center"
+                                                            Height="110">
+                                                    <Rectangle Width="14"
+                                                               Height="{Binding Total.BarHeight}"
+                                                               Fill="#3B82F6"
+                                                               VerticalAlignment="Bottom"
+                                                               RadiusX="2" RadiusY="2"
+                                                               Margin="1,0"/>
+                                                    <Rectangle Width="14"
+                                                               Height="{Binding Completed.BarHeight}"
+                                                               Fill="#16A34A"
+                                                               VerticalAlignment="Bottom"
+                                                               RadiusX="2" RadiusY="2"
+                                                               Margin="1,0"/>
+                                                    <Rectangle Width="14"
+                                                               Height="{Binding Rework.BarHeight}"
+                                                               Fill="#EF4444"
+                                                               VerticalAlignment="Bottom"
+                                                               RadiusX="2" RadiusY="2"
+                                                               Margin="1,0"/>
+                                                </StackPanel>
+                                            </Grid>
+
+                                            <!-- Имя сборщика -->
+                                            <TextBlock Text="{Binding Name}"
+                                                       FontSize="9" TextWrapping="Wrap"
+                                                       TextAlignment="Center"
+                                                       Foreground="#64748B"
+                                                       Margin="0,4,0,0"
+                                                       MaxWidth="66"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+
+                    <!-- Легенда -->
+                    <StackPanel Grid.Row="1" Orientation="Horizontal"
+                                HorizontalAlignment="Center" Margin="0,8,0,0">
+                        <Rectangle Width="12" Height="12" Fill="#3B82F6"
+                                   Margin="0,0,5,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Всего" FontSize="11" Foreground="#64748B"
+                                   VerticalAlignment="Center" Margin="0,0,14,0"/>
+                        <Rectangle Width="12" Height="12" Fill="#16A34A"
+                                   Margin="0,0,5,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Завершено" FontSize="11" Foreground="#64748B"
+                                   VerticalAlignment="Center" Margin="0,0,14,0"/>
+                        <Rectangle Width="12" Height="12" Fill="#EF4444"
+                                   Margin="0,0,5,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Доработка" FontSize="11" Foreground="#64748B"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Grid>
             </Border>
 
             <!-- Заголовок таблицы сборщиков -->

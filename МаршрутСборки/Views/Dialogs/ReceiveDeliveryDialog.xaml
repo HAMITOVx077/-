@@ -45,9 +45,26 @@
             <Border Background="White" BorderBrush="#E2E8F0"
                     BorderThickness="1" CornerRadius="8"
                     Margin="0,0,0,16">
-                <TextBox x:Name="DocumentRefBox"
-                         FontSize="14" Padding="12,10"
-                         BorderThickness="0" Background="Transparent"/>
+                <Grid>
+                    <TextBox x:Name="DocumentRefBox"
+                             FontSize="14" Padding="12,10"
+                             BorderThickness="0" Background="Transparent"/>
+                    <TextBlock Text="Например: П-0001"
+                               FontSize="14" Padding="12,10"
+                               Foreground="#CBD5E1" IsHitTestVisible="False"
+                               VerticalAlignment="Center">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Text, ElementName=DocumentRefBox}" Value="">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
             </Border>
 
             <TextBlock Text="Примечания" FontSize="13"

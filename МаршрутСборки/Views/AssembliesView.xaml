@@ -89,6 +89,7 @@
 
             <!-- Таблица -->
             <DataGrid Grid.Row="2"
+                      x:Name="AssembliesGrid"
                       ItemsSource="{Binding Assemblies}"
                       SelectedItem="{Binding SelectedAssembly}"
                       AutoGenerateColumns="False"
@@ -101,8 +102,9 @@
                       BorderThickness="0"
                       ColumnHeaderHeight="44"
                       RowHeight="48"
-                      SelectionMode="Single"
-                      CanUserResizeRows="False">
+                      SelectionMode="Extended"
+                      CanUserResizeRows="False"
+                      SelectionChanged="AssembliesGrid_SelectionChanged">
                 <DataGrid.ColumnHeaderStyle>
                     <Style TargetType="DataGridColumnHeader">
                         <Setter Property="Background" Value="White"/>
@@ -265,7 +267,21 @@
                 Visibility="{Binding CanDelete,
                     Converter={StaticResource BoolToVisibilityConverter}}"
                 Style="{StaticResource PrimaryButton}"
-                Background="#EF4444"/>
+                Background="#EF4444"
+                Margin="0,0,10,0"/>
+                    <Button Content="{Binding ShipSelectedLabel}"
+                Command="{Binding ShipSelectedCommand}"
+                Visibility="{Binding CanShipSelected,
+                    Converter={StaticResource BoolToVisibilityConverter}}"
+                Style="{StaticResource PrimaryButton}"
+                Background="#0F766E"
+                Margin="0,0,10,0"/>
+                    <Button Content="Отправить все готовые"
+                Command="{Binding ShipAllReadyCommand}"
+                Visibility="{Binding CanShipAllReady,
+                    Converter={StaticResource BoolToVisibilityConverter}}"
+                Style="{StaticResource PrimaryButton}"
+                Background="#0F766E"/>
                 </StackPanel>
             </Border>
         </Grid>

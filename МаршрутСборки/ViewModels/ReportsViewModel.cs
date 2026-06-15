@@ -3,12 +3,8 @@ using System.IO;
 using System.Text;
 using System.Windows;
 using System.Windows.Input;
-using LiveChartsCore;
-using LiveChartsCore.SkiaSharpView;
-using LiveChartsCore.SkiaSharpView.Painting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Win32;
-using SkiaSharp;
 using МаршрутСборки.Data;
 using МаршрутСборки.Helpers;
 using МаршрутСборки.Models;
@@ -24,6 +20,26 @@ namespace МаршрутСборки.ViewModels
         public int InProgress { get; set; }
         public int Rework { get; set; }
         public string CompletionRate => Total > 0 ? $"{Completed * 100 / Total}%" : "—";
+    }
+
+    public class ChartBar
+    {
+        public int Value { get; set; }
+        public double BarHeight { get; set; }
+    }
+
+    public class AssemblerChartGroup
+    {
+        public string Name { get; set; } = string.Empty;
+        public ChartBar Total { get; set; } = new();
+        public ChartBar Completed { get; set; } = new();
+        public ChartBar Rework { get; set; } = new();
+    }
+
+    public class YAxisLabel
+    {
+        public string Text { get; set; } = string.Empty;
+        public double TopOffset { get; set; }
     }
 
     public class ReportsViewModel : BaseViewModel
@@ -93,24 +109,10 @@ namespace МаршрутСборки.ViewModels
         public ObservableCollection<AssemblerStat> AssemblerStats { get; } = new();
         public ObservableCollection<WarehouseOperation> WarehouseOps { get; } = new();
 
-        private ISeries[] _assemblerSeries = Array.Empty<ISeries>();
-        public ISeries[] AssemblerSeries
-        {
-            get => _assemblerSeries;
-            set => SetProperty(ref _assemblerSeries, value);
-        }
-
-        private Axis[] _assemblerXAxes = new[] { new Axis { Labels = Array.Empty<string>() } };
-        public Axis[] AssemblerXAxes
-        {
-            get => _assemblerXAxes;
-            set => SetProperty(ref _assemblerXAxes, value);
-        }
-
-        public Axis[] YAxes { get; } = new[]
-        {
-            new Axis { MinLimit = 0, ForceStepToMin = true, MinStep = 1 }
-        };
+        public List<AssemblerChartGroup> ChartGroups { get; private set; } = new();
+        public List<YAxisLabel> YAxisLabels { get; private set; } = new();
+        public bool HasChartData => ChartGroups.Count > 0;
+        public bool HasNoChartData => ChartGroups.Count == 0;
 
         public ICommand RefreshCommand { get; }
         public ICommand ExportAssembliesReportCommand { get; }
@@ -189,42 +191,33 @@ namespace МаршрутСборки.ViewModels
             foreach (var s in statGroups)
                 AssemblerStats.Add(s);
 
-            // Build chart series
-            var labels = statGroups.Select(s => s.Name).ToArray();
-            AssemblerXAxes = new[]
-            {
-                new Axis
-                {
-                    Labels = labels,
-                    LabelsRotation = -30,
-                    TextSize = 11
-                }
-            };
+            // Build WPF bar chart data
+            const double barAreaHeight = 110;
+            int maxVal = statGroups.Count > 0 ? Math.Max(1, statGroups.Max(s => s.Total)) : 1;
+            double Scale(int v) => v == 0 ? 0 : Math.Max(2, v * barAreaHeight / maxVal);
 
-            AssemblerSeries = new ISeries[]
+            ChartGroups = statGroups.Select(s => new AssemblerChartGroup
             {
-                new ColumnSeries<int>
+                Name      = s.Name,
+                Total     = new ChartBar { Value = s.Total,     BarHeight = Scale(s.Total) },
+                Completed = new ChartBar { Value = s.Completed, BarHeight = Scale(s.Completed) },
+                Rework    = new ChartBar { Value = s.Rework,    BarHeight = Scale(s.Rework) }
+            }).ToList();
+
+            int steps = Math.Min(maxVal, 5);
+            YAxisLabels = Enumerable.Range(0, steps + 1)
+                .Select(i =>
                 {
-                    Name = "Всего",
-                    Values = statGroups.Select(s => s.Total).ToArray(),
-                    Fill = new SolidColorPaint(new SKColor(59, 130, 246)),
-                    MaxBarWidth = 30
-                },
-                new ColumnSeries<int>
-                {
-                    Name = "Завершено",
-                    Values = statGroups.Select(s => s.Completed).ToArray(),
-                    Fill = new SolidColorPaint(new SKColor(22, 163, 74)),
-                    MaxBarWidth = 30
-                },
-                new ColumnSeries<int>
-                {
-                    Name = "Доработка",
-                    Values = statGroups.Select(s => s.Rework).ToArray(),
-                    Fill = new SolidColorPaint(new SKColor(239, 68, 68)),
-                    MaxBarWidth = 30
-                }
-            };
+                    int v = (int)Math.Round((double)maxVal * i / steps);
+                    double top = barAreaHeight * (1.0 - (double)i / steps) - 6;
+                    return new YAxisLabel { Text = v.ToString(), TopOffset = Math.Max(0, top) };
+                })
+                .ToList();
+
+            OnPropertyChanged(nameof(ChartGroups));
+            OnPropertyChanged(nameof(YAxisLabels));
+            OnPropertyChanged(nameof(HasChartData));
+            OnPropertyChanged(nameof(HasNoChartData));
 
             // Event log
             var eventsQuery = context.EventLogs

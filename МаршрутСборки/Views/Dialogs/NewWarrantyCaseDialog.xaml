@@ -1,8 +1,8 @@
-﻿<Window x:Class="МаршрутСборки.Views.Dialogs.NewWarrantyCaseDialog"
+<Window x:Class="МаршрутСборки.Views.Dialogs.NewWarrantyCaseDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Новое гарантийное обращение"
-        Height="600" Width="500"
+        Height="640" Width="500"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         Background="#F8FAFC">
@@ -28,39 +28,15 @@
 
         <StackPanel Grid.Row="1" Margin="24,20">
 
-            <TextBlock Text="Имя клиента *" FontSize="13"
+            <!-- Номер сборки с живым поиском -->
+            <TextBlock Text="Номер сборки" FontSize="13"
                        Foreground="#475569" Margin="0,0,0,6"/>
-            <Border Background="White" BorderBrush="#E2E8F0"
-                    BorderThickness="1" CornerRadius="8" Margin="0,0,0,14">
-                <TextBox x:Name="ClientNameBox" FontSize="14" Padding="12,10"
-                         BorderThickness="0" Background="Transparent"/>
-            </Border>
-
-            <TextBlock Text="Телефон клиента" FontSize="13"
-                       Foreground="#475569" Margin="0,0,0,6"/>
-            <Border Background="White" BorderBrush="#E2E8F0"
-                    BorderThickness="1" CornerRadius="8" Margin="0,0,0,14">
-                <TextBox x:Name="ClientPhoneBox" FontSize="14" Padding="12,10"
-                         BorderThickness="0" Background="Transparent"/>
-            </Border>
-
-            <TextBlock Text="Описание проблемы *" FontSize="13"
-                       Foreground="#475569" Margin="0,0,0,6"/>
-            <Border Background="White" BorderBrush="#E2E8F0"
-                    BorderThickness="1" CornerRadius="8" Margin="0,0,0,14">
-                <TextBox x:Name="ProblemBox" FontSize="14" Padding="12,10"
-                         BorderThickness="0" Background="Transparent"
-                         TextWrapping="Wrap" AcceptsReturn="True"
-                         Height="100" VerticalScrollBarVisibility="Auto"/>
-            </Border>
-
-            <TextBlock Text="Номер сборки (если известен)" FontSize="13"
-                       Foreground="#475569" Margin="0,0,0,6"/>
-            <Border Background="White" BorderBrush="#E2E8F0"
+            <Border x:Name="AssemblyNumberBorder" Background="White" BorderBrush="#E2E8F0"
                     BorderThickness="1" CornerRadius="8">
                 <Grid>
                     <TextBox x:Name="AssemblyNumberBox" FontSize="14" Padding="12,10"
-                             BorderThickness="0" Background="Transparent"/>
+                             BorderThickness="0" Background="Transparent"
+                             TextChanged="AssemblyNumberBox_TextChanged"/>
                     <TextBlock Text="Например: СБ-2026-0001" FontSize="14" Padding="12,10"
                                Foreground="#CBD5E1" IsHitTestVisible="False"
                                VerticalAlignment="Center">
@@ -76,6 +52,77 @@
                         </TextBlock.Style>
                     </TextBlock>
                 </Grid>
+            </Border>
+
+            <!-- Ошибка: сборка не найдена -->
+            <TextBlock x:Name="AssemblyErrorText"
+                       Text="Сборка с таким номером не найдена. Введите правильный серийный номер."
+                       FontSize="11" Foreground="#EF4444"
+                       Margin="0,4,0,0" TextWrapping="Wrap"
+                       Visibility="Collapsed"/>
+
+            <!-- Выпадающий список результатов поиска -->
+            <Popup x:Name="AssemblyPopup"
+                   PlacementTarget="{Binding ElementName=AssemblyNumberBorder}"
+                   Placement="Bottom" StaysOpen="False"
+                   Width="{Binding ActualWidth, ElementName=AssemblyNumberBorder}"
+                   AllowsTransparency="False">
+                <Border Background="White" BorderBrush="#CBD5E1" BorderThickness="1"
+                        MaxHeight="220">
+                    <ListBox x:Name="AssemblyResultsList" BorderThickness="0"
+                             SelectionChanged="AssemblyResultsList_SelectionChanged">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="Padding" Value="12,8"/>
+                                <Setter Property="Cursor" Value="Hand"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#EFF6FF"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel>
+                                    <TextBlock Text="{Binding AssemblyNumber}" FontSize="13"
+                                               FontWeight="SemiBold" Foreground="#1E293B"/>
+                                    <TextBlock Text="{Binding ClientName}" FontSize="11"
+                                               Foreground="#64748B" Margin="0,1,0,0"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Border>
+            </Popup>
+
+            <!-- Имя клиента -->
+            <TextBlock Text="Имя клиента *" FontSize="13"
+                       Foreground="#475569" Margin="0,14,0,6"/>
+            <Border Background="White" BorderBrush="#E2E8F0"
+                    BorderThickness="1" CornerRadius="8" Margin="0,0,0,14">
+                <TextBox x:Name="ClientNameBox" FontSize="14" Padding="12,10"
+                         BorderThickness="0" Background="Transparent"/>
+            </Border>
+
+            <!-- Телефон -->
+            <TextBlock Text="Телефон клиента" FontSize="13"
+                       Foreground="#475569" Margin="0,0,0,6"/>
+            <Border Background="White" BorderBrush="#E2E8F0"
+                    BorderThickness="1" CornerRadius="8" Margin="0,0,0,14">
+                <TextBox x:Name="ClientPhoneBox" FontSize="14" Padding="12,10"
+                         BorderThickness="0" Background="Transparent"/>
+            </Border>
+
+            <!-- Описание проблемы -->
+            <TextBlock Text="Описание проблемы *" FontSize="13"
+                       Foreground="#475569" Margin="0,0,0,6"/>
+            <Border Background="White" BorderBrush="#E2E8F0"
+                    BorderThickness="1" CornerRadius="8">
+                <TextBox x:Name="ProblemBox" FontSize="14" Padding="12,10"
+                         BorderThickness="0" Background="Transparent"
+                         TextWrapping="Wrap" AcceptsReturn="True"
+                         Height="100" VerticalScrollBarVisibility="Auto"/>
             </Border>
 
         </StackPanel>

@@ -290,15 +290,29 @@
                                             </Border.Style>
                                             <StackPanel>
                                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,3">
-                                                    <TextBlock FontSize="11" FontWeight="Bold">
+                                                    <!-- Ожидает выдачи (IsIssued=false) -->
+                                                    <TextBlock Text="⏳ Ожидает выдачи"
+                                                               FontSize="11" FontWeight="Bold" Foreground="#92400E">
                                                         <TextBlock.Style>
                                                             <Style TargetType="TextBlock">
-                                                                <Setter Property="Text" Value="⏳ Ожидает выдачи"/>
-                                                                <Setter Property="Foreground" Value="#92400E"/>
+                                                                <Setter Property="Visibility" Value="Visible"/>
                                                                 <Style.Triggers>
                                                                     <DataTrigger Binding="{Binding IsIssued}" Value="True">
-                                                                        <Setter Property="Text" Value="✓ Выполнено"/>
-                                                                        <Setter Property="Foreground" Value="#15803D"/>
+                                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                    <!-- Комплектующие выданы (IsIssued=true) -->
+                                                    <TextBlock Text="✓ Комплектующие выданы"
+                                                               FontSize="11" FontWeight="Bold" Foreground="#15803D">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsIssued}" Value="True">
+                                                                        <Setter Property="Visibility" Value="Visible"/>
                                                                     </DataTrigger>
                                                                 </Style.Triggers>
                                                             </Style>

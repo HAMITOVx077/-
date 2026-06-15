@@ -1154,7 +1154,10 @@ namespace МаршрутСборки.Services
         public void SaveAndOpen(byte[] pdf, string fileName)
         {
             var dir = Helpers.AppSettings.OutputDirectory;
-            var path = Path.Combine(dir, fileName);
+            // Заменяем символы, недопустимые в именах файлов
+            var safeName = string.Concat(fileName.Split(Path.GetInvalidFileNameChars()))
+                .Replace('/', '-').Replace('\\', '-');
+            var path = Path.Combine(dir, safeName);
             File.WriteAllBytes(path, pdf);
             System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
             {

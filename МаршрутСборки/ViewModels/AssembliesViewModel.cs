@@ -17,6 +17,32 @@ namespace МаршрутСборки.ViewModels
 
         private ObservableCollection<Assembly> _assemblies = new();
         private Assembly? _selectedAssembly;
+        private List<Assembly> _selectedAssemblies = new();
+
+        public List<Assembly> SelectedAssemblies
+        {
+            get => _selectedAssemblies;
+            set
+            {
+                _selectedAssemblies = value;
+                OnPropertyChanged(nameof(SelectedAssemblies));
+                OnPropertyChanged(nameof(CanShipSelected));
+                OnPropertyChanged(nameof(ShipSelectedLabel));
+            }
+        }
+
+        public bool CanShipSelected =>
+            (SessionContext.IsDispatcher || SessionContext.IsAdmin) &&
+            _selectedAssemblies.Any(a => a.Status == AssemblyStatus.Ready);
+
+        public bool CanShipAllReady =>
+            SessionContext.IsDispatcher || SessionContext.IsAdmin;
+
+        public string ShipSelectedLabel =>
+            _selectedAssemblies.Count(a => a.Status == AssemblyStatus.Ready) is int n && n > 0
+                ? $"Отправить выбранные ({n})"
+                : "Отправить выбранные";
+
         private ObservableCollection<AssemblyReworkItem> _reworkItems = new();
         private ObservableCollection<AssemblyReworkItem> _completedReworkItems = new();
         private string _searchText = string.Empty;
@@ -179,6 +205,8 @@ namespace МаршрутСборки.ViewModels
         public ICommand PrintWarrantyCommand { get; }
         public ICommand PrintAcceptanceCommand { get; }
         public ICommand PrintLabelCommand { get; }
+        public ICommand ShipSelectedCommand { get; }
+        public ICommand ShipAllReadyCommand { get; }
 
         public AssembliesViewModel()
         {
@@ -230,6 +258,14 @@ namespace МаршрутСборки.ViewModels
             PrintLabelCommand = new RelayCommand(
                 _ => PrintLabel(),
                 _ => CanPrintLabel);
+
+            ShipSelectedCommand = new RelayCommand(
+                _ => ShipSelected(),
+                _ => CanShipSelected);
+
+            ShipAllReadyCommand = new RelayCommand(
+                _ => ShipAllReady(),
+                _ => CanShipAllReady);
 
             LoadAssemblies();
         }
@@ -471,6 +507,60 @@ namespace МаршрутСборки.ViewModels
             var pdf = new PdfService().GenerateAssemblyLabel(asm);
             new PdfService().SaveAndOpen(pdf,
                 $"Этикетка_{asm.AssemblyNumber}.pdf");
+        }
+
+        private void ShipSelected()
+        {
+            var toShip = _selectedAssemblies
+                .Where(a => a.Status == AssemblyStatus.Ready)
+                .ToList();
+            if (toShip.Count == 0) return;
+
+            var list = string.Join("\n", toShip.Select(a =>
+                $"  • {a.AssemblyNumber} — {a.ClientName}"));
+            var result = MessageBox.Show(
+                $"Отметить как отправленные клиенту ({toShip.Count} шт.)?\n\n{list}",
+                "Подтверждение отправки",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+            if (result != MessageBoxResult.Yes) return;
+
+            var context = new AppDbContext();
+            var service = new AssemblyService(context);
+            foreach (var a in toShip)
+                service.UpdateStatus(a.AssemblyId, AssemblyStatus.Shipped);
+
+            LoadAssemblies();
+        }
+
+        private void ShipAllReady()
+        {
+            var context = new AppDbContext();
+            var service = new AssemblyService(context);
+            var toShip = service.GetByStatus(AssemblyStatus.Ready);
+            if (toShip.Count == 0)
+            {
+                MessageBox.Show(
+                    "Нет сборок со статусом «Готова».",
+                    "Нет данных",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+                return;
+            }
+
+            var list = string.Join("\n", toShip.Select(a =>
+                $"  • {a.AssemblyNumber} — {a.ClientName}"));
+            var result = MessageBox.Show(
+                $"Отправить все готовые сборки ({toShip.Count} шт.)?\n\n{list}",
+                "Подтверждение отправки",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+            if (result != MessageBoxResult.Yes) return;
+
+            foreach (var a in toShip)
+                service.UpdateStatus(a.AssemblyId, AssemblyStatus.Shipped);
+
+            LoadAssemblies();
         }
     }
 }

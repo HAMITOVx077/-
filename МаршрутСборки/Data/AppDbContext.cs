@@ -15,6 +15,7 @@ namespace МаршрутСборки.Data
         public DbSet<WarrantyCase> WarrantyCases { get; set; }
         public DbSet<EventLog> EventLogs { get; set; }
         public DbSet<AssemblyReworkItem> AssemblyReworkItems { get; set; }
+        public DbSet<WarrantyCaseNote> WarrantyCaseNotes { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -58,6 +59,18 @@ namespace МаршрутСборки.Data
                 .HasOne(r => r.NewComponent)
                 .WithMany()
                 .HasForeignKey(r => r.NewComponentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<WarrantyCaseNote>()
+                .HasOne(n => n.Case)
+                .WithMany()
+                .HasForeignKey(n => n.CaseId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<WarrantyCaseNote>()
+                .HasOne(n => n.Author)
+                .WithMany()
+                .HasForeignKey(n => n.AuthorId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             //Точность для decimal

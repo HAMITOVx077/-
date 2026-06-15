@@ -7,6 +7,7 @@ using МаршрутСборки.Data;
 using МаршрутСборки.Helpers;
 using МаршрутСборки.Models;
 using МаршрутСборки.Services;
+using System;
 
 namespace МаршрутСборки.ViewModels
 {
@@ -14,12 +15,33 @@ namespace МаршрутСборки.ViewModels
     {
         private ObservableCollection<WarrantyCase> _cases = new();
         private WarrantyCase? _selectedCase;
+        private ObservableCollection<WarrantyCaseNote> _notes = new();
+        private string _newNoteText = string.Empty;
 
         public ObservableCollection<WarrantyCase> Cases
         {
             get => _cases;
             set => SetProperty(ref _cases, value);
         }
+
+        public ObservableCollection<WarrantyCaseNote> Notes
+        {
+            get => _notes;
+            set => SetProperty(ref _notes, value);
+        }
+
+        public string NewNoteText
+        {
+            get => _newNoteText;
+            set
+            {
+                if (SetProperty(ref _newNoteText, value))
+                    OnPropertyChanged(nameof(CanAddNote));
+            }
+        }
+
+        public bool CanAddNote =>
+            SelectedCase != null && !string.IsNullOrWhiteSpace(_newNoteText);
 
         public WarrantyCase? SelectedCase
         {
@@ -28,7 +50,9 @@ namespace МаршрутСборки.ViewModels
             {
                 SetProperty(ref _selectedCase, value);
                 OnPropertyChanged(nameof(CanAssignRework));
-                OnPropertyChanged(nameof(CanUpdateStatus));
+                OnPropertyChanged(nameof(CanCloseCase));
+                OnPropertyChanged(nameof(CanAddNote));
+                LoadNotes();
             }
         }
 
@@ -36,31 +60,33 @@ namespace МаршрутСборки.ViewModels
 
         public bool CanAssignRework =>
             SelectedCase != null &&
-            SelectedCase.Status != WarrantyStatus.InRepair;
+            SelectedCase.Status != WarrantyStatus.InRepair &&
+            SelectedCase.Status != WarrantyStatus.ReadyForPickup &&
+            SelectedCase.Status != WarrantyStatus.Closed;
 
-        public bool CanUpdateStatus =>
+        public bool CanCloseCase =>
             SelectedCase != null &&
-            SelectedCase.Status != WarrantyStatus.InRepair;
+            SelectedCase.Status == WarrantyStatus.ReadyForPickup;
 
         public ICommand LoadCommand { get; }
         public ICommand CreateCommand { get; }
-        public ICommand UpdateStatusCommand { get; }
         public ICommand AssignReworkCommand { get; }
+        public ICommand CloseCaseCommand { get; }
         public ICommand DeleteCommand { get; }
+        public ICommand AddNoteCommand { get; }
 
         public WarrantyViewModel()
         {
-            LoadCommand = new RelayCommand(_ => Load());
-            CreateCommand = new RelayCommand(_ => Create());
-            UpdateStatusCommand = new RelayCommand(
-                _ => UpdateStatus(),
-                _ => CanUpdateStatus);
-            AssignReworkCommand = new RelayCommand(
-                _ => AssignRework(),
-                _ => CanAssignRework);
-            DeleteCommand = new RelayCommand(
+            LoadCommand       = new RelayCommand(_ => Load());
+            CreateCommand     = new RelayCommand(_ => Create());
+            AssignReworkCommand = new RelayCommand(_ => AssignRework(), _ => CanAssignRework);
+            CloseCaseCommand  = new RelayCommand(_ => CloseCase(), _ => CanCloseCase);
+            DeleteCommand     = new RelayCommand(
                 _ => Delete(),
                 _ => SelectedCase != null && CanDelete);
+            AddNoteCommand = new RelayCommand(
+                _ => AddNote(),
+                _ => CanAddNote);
             Load();
         }
 
@@ -69,7 +95,29 @@ namespace МаршрутСборки.ViewModels
             var selectedId = SelectedCase?.CaseId;
             var context = new AppDbContext();
             var service = new WarrantyService(context);
-            Cases = new ObservableCollection<WarrantyCase>(service.GetAll());
+            var cases = service.GetAll();
+
+            // Авто-переход: если сборка прошла ремонт и стала Готова/Отгружена → Готово к выдаче
+            foreach (var c in cases.Where(c =>
+                c.Status == WarrantyStatus.InRepair &&
+                c.Assembly != null &&
+                (c.Assembly.Status == AssemblyStatus.Ready ||
+                 c.Assembly.Status == AssemblyStatus.Shipped)))
+            {
+                service.UpdateStatus(c.CaseId, WarrantyStatus.ReadyForPickup, c.RepairNotes);
+                c.Status = WarrantyStatus.ReadyForPickup;
+            }
+
+            // Авто-закрытие: если сборка отгружена → обращение закрыто
+            foreach (var c in cases.Where(c =>
+                c.Status == WarrantyStatus.ReadyForPickup &&
+                c.Assembly?.Status == AssemblyStatus.Shipped))
+            {
+                service.UpdateStatus(c.CaseId, WarrantyStatus.Closed, c.RepairNotes);
+                c.Status = WarrantyStatus.Closed;
+            }
+
+            Cases = new ObservableCollection<WarrantyCase>(cases);
             if (selectedId.HasValue)
                 SelectedCase = Cases.FirstOrDefault(c => c.CaseId == selectedId.Value);
         }
@@ -77,14 +125,6 @@ namespace МаршрутСборки.ViewModels
         private void Create()
         {
             var dialog = new Views.Dialogs.NewWarrantyCaseDialog();
-            if (dialog.ShowDialog() == true)
-                Load();
-        }
-
-        private void UpdateStatus()
-        {
-            if (SelectedCase == null) return;
-            var dialog = new Views.Dialogs.UpdateWarrantyStatusDialog(SelectedCase);
             if (dialog.ShowDialog() == true)
                 Load();
         }
@@ -97,14 +137,13 @@ namespace МаршрутСборки.ViewModels
             {
                 MessageBox.Show(
                     "К данному обращению не привязана сборка.\n\n" +
-                    "Свяжите обращение со сборкой при создании или обновлении статуса.",
+                    "Укажите серийный номер сборки при создании обращения.",
                     "Нет связанной сборки",
                     MessageBoxButton.OK,
                     MessageBoxImage.Warning);
                 return;
             }
 
-            // Load full assembly with components
             var context = new AppDbContext();
             var assembly = context.Assemblies
                 .Include(a => a.AssemblyComponents).ThenInclude(ac => ac.Component)
@@ -124,6 +163,25 @@ namespace МаршрутСборки.ViewModels
             }
         }
 
+        private void CloseCase()
+        {
+            if (SelectedCase == null) return;
+
+            var result = MessageBox.Show(
+                $"Подтвердить выдачу клиенту?\n\n" +
+                $"Обращение {SelectedCase.CaseNumber} будет закрыто.\n" +
+                $"Клиент: {SelectedCase.ClientName}",
+                "Выдача клиенту",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (result != MessageBoxResult.Yes) return;
+
+            var ctx = new AppDbContext();
+            new WarrantyService(ctx).UpdateStatus(SelectedCase.CaseId, WarrantyStatus.Closed);
+            Load();
+        }
+
         private void Delete()
         {
             if (SelectedCase == null) return;
@@ -139,11 +197,38 @@ namespace МаршрутСборки.ViewModels
             if (result != MessageBoxResult.Yes) return;
 
             var context = new AppDbContext();
-            var service = new WarrantyService(context);
-            service.Delete(SelectedCase.CaseId);
-
+            new WarrantyService(context).Delete(SelectedCase.CaseId);
             SelectedCase = null;
             Load();
+        }
+
+        private void LoadNotes()
+        {
+            if (SelectedCase == null) { Notes = new(); return; }
+            var context = new AppDbContext();
+            var items = context.WarrantyCaseNotes
+                .Include(n => n.Author)
+                .Where(n => n.CaseId == SelectedCase.CaseId)
+                .OrderBy(n => n.CreatedAt)
+                .ToList();
+            Notes = new ObservableCollection<WarrantyCaseNote>(items);
+        }
+
+        private void AddNote()
+        {
+            if (SelectedCase == null || string.IsNullOrWhiteSpace(_newNoteText)) return;
+            var context = new AppDbContext();
+            var note = new WarrantyCaseNote
+            {
+                CaseId = SelectedCase.CaseId,
+                Text = _newNoteText.Trim(),
+                CreatedAt = DateTime.UtcNow,
+                AuthorId = SessionContext.CurrentUser!.UserId
+            };
+            context.WarrantyCaseNotes.Add(note);
+            context.SaveChanges();
+            NewNoteText = string.Empty;
+            LoadNotes();
         }
     }
 }
