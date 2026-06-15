@@ -48,6 +48,7 @@ namespace МаршрутСборки.ViewModels
         private int _completedAssemblies;
         private int _inProgressAssemblies;
         private int _reworkAssemblies;
+        private int _shippedAssemblies;
         private int _lowStockCount;
         private int _openWarrantyCases;
         private DateTime _dateFrom = DateTime.Today.AddMonths(-1);
@@ -73,6 +74,11 @@ namespace МаршрутСборки.ViewModels
         {
             get => _reworkAssemblies;
             set => SetProperty(ref _reworkAssemblies, value);
+        }
+        public int ShippedAssemblies
+        {
+            get => _shippedAssemblies;
+            set => SetProperty(ref _shippedAssemblies, value);
         }
         public int LowStockCount
         {
@@ -108,6 +114,7 @@ namespace МаршрутСборки.ViewModels
         public ObservableCollection<EventLog> RecentEvents { get; } = new();
         public ObservableCollection<AssemblerStat> AssemblerStats { get; } = new();
         public ObservableCollection<WarehouseOperation> WarehouseOps { get; } = new();
+        public ObservableCollection<Models.Assembly> ShippedList { get; } = new();
 
         public List<AssemblerChartGroup> ChartGroups { get; private set; } = new();
         public List<YAxisLabel> YAxisLabels { get; private set; } = new();
@@ -120,6 +127,7 @@ namespace МаршрутСборки.ViewModels
         public ICommand ExportEventLogTxtCommand { get; }
         public ICommand ExportWarehouseOpsTxtCommand { get; }
         public ICommand ExportAssemblerStatsPdfCommand { get; }
+        public ICommand ExportShippedTxtCommand { get; }
 
         public ReportsViewModel()
         {
@@ -129,6 +137,7 @@ namespace МаршрутСборки.ViewModels
             ExportEventLogTxtCommand = new RelayCommand(_ => ExportEventLogTxt());
             ExportWarehouseOpsTxtCommand = new RelayCommand(_ => ExportWarehouseOpsTxt());
             ExportAssemblerStatsPdfCommand = new RelayCommand(_ => ExportAssemblerStatsPdf());
+            ExportShippedTxtCommand = new RelayCommand(_ => ExportShippedTxt());
             Load();
         }
 
@@ -166,6 +175,22 @@ namespace МаршрутСборки.ViewModels
             ReworkAssemblies = assemblies.Count(a => a.Status == AssemblyStatus.Rework);
             LowStockCount = context.Components.Count(c => c.StockBalance <= c.MinStock);
             OpenWarrantyCases = context.WarrantyCases.Count(w => w.Status != WarrantyStatus.Closed);
+
+            // Shipped in period — by ShippedDate if set, otherwise show all Shipped created in period
+            var shipped = context.Assemblies
+                .Include(a => a.Assembler)
+                .Include(a => a.Dispatcher)
+                .Where(a => a.Status == AssemblyStatus.Shipped &&
+                            ((a.ShippedDate != null && a.ShippedDate >= dateFromUtc && a.ShippedDate <= dateToUtc) ||
+                             (a.ShippedDate == null && a.CreationDate >= dateFromUtc && a.CreationDate <= dateToUtc)))
+                .OrderByDescending(a => a.ShippedDate ?? a.CreationDate)
+                .ToList();
+            if (SelectedAssemblerFilter != null)
+                shipped = shipped.Where(a => a.AssemblerId == SelectedAssemblerFilter.UserId).ToList();
+            ShippedAssemblies = shipped.Count;
+            ShippedList.Clear();
+            foreach (var a in shipped)
+                ShippedList.Add(a);
 
             // Assembler stats — always all assemblers in the period
             var allAssemblies = context.Assemblies
@@ -370,6 +395,53 @@ namespace МаршрутСборки.ViewModels
             var pdf = pdfService.GenerateAssemblerStatsPdf(stats, DateFrom, DateTo);
             pdfService.SaveAndOpen(pdf,
                 $"Статистика_сборщиков_{DateFrom:dd.MM.yyyy}_{DateTo:dd.MM.yyyy}.pdf");
+        }
+
+        private void ExportShippedTxt()
+        {
+            if (ShippedList.Count == 0)
+            {
+                MessageBox.Show("Нет отгруженных сборок за выбранный период.",
+                    "Нет данных", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var dlg = new SaveFileDialog
+            {
+                Title = "Сохранить историю отгрузок",
+                Filter = "Текстовый файл (*.txt)|*.txt",
+                FileName = $"Отгрузки_{DateFrom:dd.MM.yyyy}_{DateTo:dd.MM.yyyy}.txt"
+            };
+            if (dlg.ShowDialog() != true) return;
+
+            var sb = new StringBuilder();
+            sb.AppendLine("ИСТОРИЯ ОТГРУЗОК");
+            sb.AppendLine($"Период: {DateFrom:dd.MM.yyyy} — {DateTo:dd.MM.yyyy}");
+            if (SelectedAssemblerFilter != null)
+                sb.AppendLine($"Сборщик: {SelectedAssemblerFilter.FullName}");
+            sb.AppendLine($"Дата выгрузки: {DateTime.Now:dd.MM.yyyy HH:mm}");
+            sb.AppendLine($"Всего отгружено: {ShippedList.Count} шт.");
+            sb.AppendLine(new string('=', 80));
+            sb.AppendLine();
+            sb.AppendLine($"{"Дата отгрузки",-22} {"Номер",-16} {"Клиент",-28} {"Сборщик",-22} {"Диспетчер",-20}");
+            sb.AppendLine(new string('-', 80));
+
+            foreach (var a in ShippedList)
+            {
+                var date = a.ShippedDate.HasValue
+                    ? a.ShippedDate.Value.ToLocalTime().ToString("dd.MM.yyyy HH:mm")
+                    : "—";
+                sb.AppendLine(
+                    $"{date,-22} " +
+                    $"{a.AssemblyNumber,-16} " +
+                    $"{a.ClientName,-28} " +
+                    $"{(a.Assembler?.FullName ?? "—"),-22} " +
+                    $"{(a.Dispatcher?.FullName ?? "—"),-20}");
+            }
+
+            File.WriteAllText(dlg.FileName, sb.ToString(), Encoding.UTF8);
+            MessageBox.Show($"Файл сохранён:\n{dlg.FileName}", "Экспорт завершён",
+                MessageBoxButton.OK, MessageBoxImage.Information);
         }
     }
 }

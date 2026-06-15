@@ -158,6 +158,8 @@ namespace МаршрутСборки.Services
             {
                 var oldStatus = assembly.Status;
                 assembly.Status = newStatus;
+                if (newStatus == AssemblyStatus.Shipped)
+                    assembly.ShippedDate = DateTime.UtcNow;
                 _context.SaveChanges();
 
                 if (SessionContext.CurrentUser != null)

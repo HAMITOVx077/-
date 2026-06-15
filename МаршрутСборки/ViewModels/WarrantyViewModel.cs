@@ -40,9 +40,6 @@ namespace МаршрутСборки.ViewModels
             }
         }
 
-        public bool CanAddNote =>
-            SelectedCase != null && !string.IsNullOrWhiteSpace(_newNoteText);
-
         public WarrantyCase? SelectedCase
         {
             get => _selectedCase;
@@ -50,6 +47,7 @@ namespace МаршрутСборки.ViewModels
             {
                 SetProperty(ref _selectedCase, value);
                 OnPropertyChanged(nameof(CanAssignRework));
+                OnPropertyChanged(nameof(AssignReworkLabel));
                 OnPropertyChanged(nameof(CanCloseCase));
                 OnPropertyChanged(nameof(CanAddNote));
                 LoadNotes();
@@ -60,7 +58,16 @@ namespace МаршрутСборки.ViewModels
 
         public bool CanAssignRework =>
             SelectedCase != null &&
-            SelectedCase.Status != WarrantyStatus.InRepair &&
+            SelectedCase.Status != WarrantyStatus.ReadyForPickup &&
+            SelectedCase.Status != WarrantyStatus.Closed;
+
+        public string AssignReworkLabel =>
+            SelectedCase?.Status == WarrantyStatus.InRepair
+                ? "➕ Добавить замену деталей"
+                : "🔧 Назначить переделку";
+
+        public bool CanAddNote =>
+            SelectedCase != null &&
             SelectedCase.Status != WarrantyStatus.ReadyForPickup &&
             SelectedCase.Status != WarrantyStatus.Closed;
 
@@ -84,9 +91,7 @@ namespace МаршрутСборки.ViewModels
             DeleteCommand     = new RelayCommand(
                 _ => Delete(),
                 _ => SelectedCase != null && CanDelete);
-            AddNoteCommand = new RelayCommand(
-                _ => AddNote(),
-                _ => CanAddNote);
+            AddNoteCommand = new RelayCommand(_ => AddNote());
             Load();
         }
 

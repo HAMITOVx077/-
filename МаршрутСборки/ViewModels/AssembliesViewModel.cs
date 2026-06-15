@@ -45,6 +45,8 @@ namespace МаршрутСборки.ViewModels
 
         private ObservableCollection<AssemblyReworkItem> _reworkItems = new();
         private ObservableCollection<AssemblyReworkItem> _completedReworkItems = new();
+        private WarrantyCase? _linkedWarrantyCase;
+        private ObservableCollection<WarrantyCaseNote> _warrantyNotes = new();
         private string _searchText = string.Empty;
         private string _selectedStatusFilter =
             SessionContext.IsAssembler ? "Мои" : "Все";
@@ -76,6 +78,24 @@ namespace МаршрутСборки.ViewModels
         public bool HasReworkItems => _reworkItems.Count > 0;
         public bool HasCompletedReworkItems => _completedReworkItems.Count > 0;
 
+        public WarrantyCase? LinkedWarrantyCase
+        {
+            get => _linkedWarrantyCase;
+            set
+            {
+                SetProperty(ref _linkedWarrantyCase, value);
+                OnPropertyChanged(nameof(HasWarrantyInfo));
+            }
+        }
+
+        public ObservableCollection<WarrantyCaseNote> WarrantyNotes
+        {
+            get => _warrantyNotes;
+            set => SetProperty(ref _warrantyNotes, value);
+        }
+
+        public bool HasWarrantyInfo => _linkedWarrantyCase != null;
+
         public Assembly? SelectedAssembly
         {
             get => _selectedAssembly;
@@ -92,6 +112,7 @@ namespace МаршрутСборки.ViewModels
                     OnPropertyChanged(nameof(CanPrintLabel));
                     OnPropertyChanged(nameof(ShowWaitingForComponents));
                     LoadReworkItems();
+                    LoadWarrantyInfo();
                 }
             }
         }
@@ -295,6 +316,40 @@ namespace МаршрутСборки.ViewModels
 
             OnPropertyChanged(nameof(HasReworkItems));
             OnPropertyChanged(nameof(HasCompletedReworkItems));
+        }
+
+        private void LoadWarrantyInfo()
+        {
+            if (SelectedAssembly == null)
+            {
+                LinkedWarrantyCase = null;
+                WarrantyNotes = new();
+                return;
+            }
+
+            var context = new AppDbContext();
+            var warrantyCase = context.WarrantyCases
+                .Include(c => c.Engineer)
+                .Where(c => c.AssemblyId == SelectedAssembly.AssemblyId &&
+                            c.Status != WarrantyStatus.Closed)
+                .OrderByDescending(c => c.ReceivedDate)
+                .FirstOrDefault();
+
+            LinkedWarrantyCase = warrantyCase;
+
+            if (warrantyCase != null)
+            {
+                var notes = context.WarrantyCaseNotes
+                    .Include(n => n.Author)
+                    .Where(n => n.CaseId == warrantyCase.CaseId)
+                    .OrderBy(n => n.CreatedAt)
+                    .ToList();
+                WarrantyNotes = new ObservableCollection<WarrantyCaseNote>(notes);
+            }
+            else
+            {
+                WarrantyNotes = new();
+            }
         }
 
         private void LoadAssemblies()

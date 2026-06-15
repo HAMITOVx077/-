@@ -489,6 +489,90 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
+                        <!-- Гарантийное обращение — показывается если сборка связана с активным кейсом -->
+                        <Border CornerRadius="10" Padding="14,12"
+                                Margin="0,14,0,0" Background="#EFF6FF"
+                                BorderBrush="#3B82F6" BorderThickness="1"
+                                Visibility="{Binding DataContext.HasWarrantyInfo,
+                                    RelativeSource={RelativeSource AncestorType=UserControl},
+                                    Converter={StaticResource BoolToVisibilityConverter}}">
+                            <StackPanel>
+                                <TextBlock Text="🛡 Гарантийное обращение"
+                                           FontSize="13" FontWeight="Bold"
+                                           Foreground="#1D4ED8" Margin="0,0,0,8"/>
+
+                                <!-- Номер и статус обращения -->
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                    <TextBlock Text="Обращение: " FontSize="11" Foreground="#64748B"/>
+                                    <TextBlock Text="{Binding DataContext.LinkedWarrantyCase.CaseNumber,
+                                        RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                               FontSize="11" FontWeight="SemiBold" Foreground="#1E293B"/>
+                                </StackPanel>
+
+                                <!-- Инженер -->
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                    <TextBlock Text="Инженер: " FontSize="11" Foreground="#64748B"/>
+                                    <TextBlock Text="{Binding DataContext.LinkedWarrantyCase.Engineer.FullName,
+                                        RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                               FontSize="11" Foreground="#1E293B"/>
+                                </StackPanel>
+
+                                <!-- Дата -->
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                    <TextBlock Text="Дата обращения: " FontSize="11" Foreground="#64748B"/>
+                                    <TextBlock Text="{Binding DataContext.LinkedWarrantyCase.ReceivedDate,
+                                        RelativeSource={RelativeSource AncestorType=UserControl},
+                                        StringFormat=dd.MM.yyyy}"
+                                               FontSize="11" Foreground="#475569"/>
+                                </StackPanel>
+
+                                <!-- Описание проблемы -->
+                                <TextBlock Text="Описание проблемы:" FontSize="11"
+                                           Foreground="#64748B" Margin="0,0,0,4"/>
+                                <Border Background="White" CornerRadius="6"
+                                        BorderBrush="#BFDBFE" BorderThickness="1"
+                                        Padding="10,8" Margin="0,0,0,10">
+                                    <TextBlock Text="{Binding DataContext.LinkedWarrantyCase.ProblemDescription,
+                                        RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                               FontSize="12" Foreground="#1E293B"
+                                               TextWrapping="Wrap"/>
+                                </Border>
+
+                                <!-- Заметки -->
+                                <TextBlock Text="Заметки инженера:" FontSize="11"
+                                           Foreground="#64748B" Margin="0,0,0,6"/>
+                                <ItemsControl ItemsSource="{Binding DataContext.WarrantyNotes,
+                                    RelativeSource={RelativeSource AncestorType=UserControl}}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="White" CornerRadius="6"
+                                                    BorderBrush="#BFDBFE" BorderThickness="1"
+                                                    Padding="10,8" Margin="0,0,0,5">
+                                                <StackPanel>
+                                                    <Grid Margin="0,0,0,3">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Grid.Column="0"
+                                                                   Text="{Binding Author.FullName}"
+                                                                   FontSize="10" FontWeight="SemiBold"
+                                                                   Foreground="#3B82F6"/>
+                                                        <TextBlock Grid.Column="1"
+                                                                   Text="{Binding CreatedAt, StringFormat=dd.MM.yyyy HH:mm}"
+                                                                   FontSize="10" Foreground="#94A3B8"/>
+                                                    </Grid>
+                                                    <TextBlock Text="{Binding Text}"
+                                                               FontSize="11" Foreground="#1E293B"
+                                                               TextWrapping="Wrap"/>
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+
                         <!-- Переделка — показывается только когда статус Доработка и есть позиции -->
                         <Border CornerRadius="10" Padding="14,12"
                                 Margin="0,14,0,0" Background="#FFF7ED"

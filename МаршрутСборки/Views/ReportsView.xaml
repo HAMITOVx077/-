@@ -221,6 +221,9 @@
                 <RowDefinition Height="200"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="220"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="300"/>
             </Grid.RowDefinitions>
 
@@ -614,14 +617,125 @@
                     HorizontalAlignment="Left"
                     Margin="0,0,0,16"/>
 
-            <!-- Заголовок журнала событий -->
+            <!-- История отгрузок -->
             <TextBlock Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="3"
+                       Text="История отгрузок за период"
+                       FontSize="15" FontWeight="SemiBold"
+                       Foreground="#1E293B" Margin="0,0,0,10"/>
+
+            <Border Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="3"
+                    Background="White" BorderBrush="#E2E8F0"
+                    BorderThickness="1" CornerRadius="12" Margin="0,0,0,6">
+                <DataGrid ItemsSource="{Binding ShippedList}"
+                          AutoGenerateColumns="False" IsReadOnly="True"
+                          GridLinesVisibility="Horizontal"
+                          HeadersVisibility="Column"
+                          Background="White" RowBackground="White"
+                          AlternatingRowBackground="#FAFAFA"
+                          BorderThickness="0"
+                          ColumnHeaderHeight="40" RowHeight="44"
+                          CanUserResizeRows="False">
+                    <DataGrid.ColumnHeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="Background" Value="White"/>
+                            <Setter Property="Foreground" Value="#64748B"/>
+                            <Setter Property="FontSize" Value="12"/>
+                            <Setter Property="FontWeight" Value="SemiBold"/>
+                            <Setter Property="Padding" Value="16,0"/>
+                            <Setter Property="BorderBrush" Value="#E2E8F0"/>
+                            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                        </Style>
+                    </DataGrid.ColumnHeaderStyle>
+                    <DataGrid.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="BorderThickness" Value="0"/>
+                            <Setter Property="Padding" Value="16,0"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="DataGridCell">
+                                        <Border Padding="{TemplateBinding Padding}"
+                                                Background="{TemplateBinding Background}">
+                                            <ContentPresenter VerticalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </DataGrid.CellStyle>
+                    <DataGrid.Columns>
+                        <DataGridTemplateColumn Header="Дата отгрузки" Width="155">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock FontSize="13" FontWeight="SemiBold"
+                                               Foreground="#1E293B" VerticalAlignment="Center">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="{}{0:dd.MM.yyyy HH:mm}">
+                                                <Binding Path="ShippedDate"
+                                                         FallbackValue=""
+                                                         TargetNullValue=""/>
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="Номер сборки" Width="130"
+                                            Binding="{Binding AssemblyNumber}">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                    <Setter Property="Foreground" Value="#1E293B"/>
+                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Клиент" Width="*"
+                                            Binding="{Binding ClientName}">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="#475569"/>
+                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Сборщик" Width="160"
+                                            Binding="{Binding Assembler.FullName}">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="#475569"/>
+                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Диспетчер" Width="160"
+                                            Binding="{Binding Dispatcher.FullName}">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="#94A3B8"/>
+                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+
+            <Button Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="3"
+                    Content="📝 Экспорт истории отгрузок в TXT"
+                    Command="{Binding ExportShippedTxtCommand}"
+                    Style="{StaticResource PrimaryButton}"
+                    Background="#0EA5E9"
+                    HorizontalAlignment="Left"
+                    Margin="0,6,0,20"/>
+
+            <!-- Заголовок журнала событий -->
+            <TextBlock Grid.Row="9" Grid.Column="0" Grid.ColumnSpan="3"
                        Text="Журнал событий за период"
                        FontSize="15" FontWeight="SemiBold"
                        Foreground="#1E293B" Margin="0,0,0,10"/>
 
             <!-- Журнал событий -->
-            <Border Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="3"
+            <Border Grid.Row="10" Grid.Column="0" Grid.ColumnSpan="3"
                     Background="White" BorderBrush="#E2E8F0"
                     BorderThickness="1" CornerRadius="12">
                 <DataGrid ItemsSource="{Binding RecentEvents}"

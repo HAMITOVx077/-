@@ -9,6 +9,7 @@ namespace МаршрутСборки.Models
         public int AssemblyId { get; set; }
         public string AssemblyNumber { get; set; } = string.Empty;
         public DateTime CreationDate { get; set; } = DateTime.UtcNow;
+        public DateTime? ShippedDate { get; set; }
         public DateTime? Deadline { get; set; }
         public string Status { get; set; } = AssemblyStatus.New;
         public string ClientName { get; set; } = string.Empty;

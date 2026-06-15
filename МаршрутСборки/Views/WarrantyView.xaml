@@ -161,7 +161,7 @@
                     BorderBrush="#E2E8F0" BorderThickness="0,1,0,0"
                     Padding="32,14">
                 <StackPanel Orientation="Horizontal">
-                    <Button Content="🔧 Назначить переделку"
+                    <Button Content="{Binding AssignReworkLabel}"
                             Command="{Binding AssignReworkCommand}"
                             Visibility="{Binding CanAssignRework,
                                 Converter={StaticResource BoolToVisibilityConverter}}"
@@ -315,44 +315,44 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
-                        <!-- Добавить заметку -->
+                        <!-- Добавить заметку — только для активных обращений -->
                         <Border Background="#F1F5F9" CornerRadius="8"
                                 BorderBrush="#CBD5E1" BorderThickness="1"
-                                Padding="10,8" Margin="0,6,0,14">
+                                Padding="10,8" Margin="0,6,0,14"
+                                Visibility="{Binding CanAddNote,
+                                    Converter={StaticResource BoolToVisibilityConverter}}">
                             <StackPanel>
-                                <TextBox Text="{Binding NewNoteText, UpdateSourceTrigger=PropertyChanged}"
-                                         FontSize="12" Padding="4"
-                                         BorderThickness="0" Background="Transparent"
-                                         TextWrapping="Wrap" AcceptsReturn="True"
-                                         MinHeight="50"
-                                         VerticalScrollBarVisibility="Auto">
-                                    <TextBox.Style>
-                                        <Style TargetType="TextBox">
-                                            <Style.Resources>
-                                                <VisualBrush x:Key="HintBrush" TileMode="None"
-                                                             Stretch="None" AlignmentX="Left" AlignmentY="Top">
-                                                    <VisualBrush.Visual>
-                                                        <TextBlock Text="Добавить заметку к обращению..."
-                                                                   Foreground="#94A3B8" FontSize="12"
-                                                                   Margin="4,4,0,0"/>
-                                                    </VisualBrush.Visual>
-                                                </VisualBrush>
-                                            </Style.Resources>
-                                            <Style.Triggers>
-                                                <Trigger Property="Text" Value="">
-                                                    <Setter Property="Background" Value="{StaticResource HintBrush}"/>
-                                                </Trigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBox.Style>
-                                </TextBox>
+                                <Grid MinHeight="54">
+                                    <TextBlock Text="Добавить заметку к обращению..."
+                                               FontSize="12" Foreground="#94A3B8"
+                                               Margin="6,6,0,0"
+                                               VerticalAlignment="Top"
+                                               IsHitTestVisible="False">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding NewNoteText}" Value="">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <TextBox Text="{Binding NewNoteText, UpdateSourceTrigger=PropertyChanged}"
+                                             FontSize="12" Padding="4"
+                                             BorderThickness="0" Background="Transparent"
+                                             TextWrapping="Wrap" AcceptsReturn="True"
+                                             VerticalScrollBarVisibility="Auto"/>
+                                </Grid>
                                 <Button Content="Добавить заметку"
                                         Command="{Binding AddNoteCommand}"
                                         Style="{StaticResource PrimaryButton}"
                                         Background="#3B82F6"
                                         HorizontalAlignment="Right"
                                         Margin="0,6,0,0"
-                                        Padding="12,6"/></StackPanel>
+                                        Padding="12,6"/>
+                            </StackPanel>
                         </Border>
 
                         <!-- Связанная сборка -->
