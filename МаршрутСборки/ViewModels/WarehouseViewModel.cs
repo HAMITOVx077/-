@@ -108,12 +108,12 @@ namespace МаршрутСборки.ViewModels
             _warehouseService = new WarehouseService(context);
 
             LoadCommand = new RelayCommand(_ => { LoadComponents(); LoadOperations(); LoadPendingAssemblies(); LoadReworkAssemblies(); });
-            AddComponentCommand = new RelayCommand(_ => AddComponent());
-            EditComponentCommand = new RelayCommand(_ => EditComponent(), _ => SelectedComponent != null);
-            ReceiveDeliveryCommand = new RelayCommand(_ => ReceiveDelivery(), _ => SelectedComponent != null);
-            IssueComponentsCommand = new RelayCommand(_ => IssueComponents(), _ => SelectedPendingAssembly != null);
+            AddComponentCommand = new RelayCommand(_ => AddComponent(), _ => SessionContext.IsStorekeeper);
+            EditComponentCommand = new RelayCommand(_ => EditComponent(), _ => SelectedComponent != null && SessionContext.IsStorekeeper);
+            ReceiveDeliveryCommand = new RelayCommand(_ => ReceiveDelivery(), _ => SelectedComponent != null && SessionContext.IsStorekeeper);
+            IssueComponentsCommand = new RelayCommand(_ => IssueComponents(), _ => SelectedPendingAssembly != null && SessionContext.IsStorekeeper);
             PrintIssueActCommand = new RelayCommand(_ => PrintIssueAct(), _ => SelectedPendingAssembly != null);
-            IssueReworkCommand = new RelayCommand(_ => IssueReworkComponents(), _ => SelectedReworkAssembly != null);
+            IssueReworkCommand = new RelayCommand(_ => IssueReworkComponents(), _ => SelectedReworkAssembly != null && SessionContext.IsStorekeeper);
             PrintReworkActCommand = new RelayCommand(_ => PrintReworkAct(), _ => SelectedReworkAssembly != null);
 
             LoadComponents();

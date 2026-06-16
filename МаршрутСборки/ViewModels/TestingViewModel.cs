@@ -67,7 +67,7 @@ namespace МаршрутСборки.ViewModels
         {
             SaveResultCommand = new RelayCommand(
                 _ => SaveResult(),
-                _ => SelectedAssembly != null);
+                _ => SelectedAssembly != null && SessionContext.IsTester);
 
             PrintTestActCommand = new RelayCommand(
                 _ => PrintTestAct(SelectedAssembly),

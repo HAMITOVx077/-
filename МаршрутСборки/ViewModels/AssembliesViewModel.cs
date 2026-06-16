@@ -32,11 +32,11 @@ namespace МаршрутСборки.ViewModels
         }
 
         public bool CanShipSelected =>
-            (SessionContext.IsDispatcher || SessionContext.IsAdmin) &&
+            SessionContext.IsDispatcher &&
             _selectedAssemblies.Any(a => a.Status == AssemblyStatus.Ready);
 
         public bool CanShipAllReady =>
-            SessionContext.IsDispatcher || SessionContext.IsAdmin;
+            SessionContext.IsDispatcher;
 
         public string ShipSelectedLabel =>
             _selectedAssemblies.Count(a => a.Status == AssemblyStatus.Ready) is int n && n > 0
@@ -162,7 +162,7 @@ namespace МаршрутСборки.ViewModels
                 };
 
         public bool CanCreate =>
-            SessionContext.IsAdmin || SessionContext.IsDispatcher;
+            SessionContext.IsDispatcher;
 
         public bool CanAccept =>
             SessionContext.IsAssembler &&
@@ -175,7 +175,7 @@ namespace МаршрутСборки.ViewModels
             !HasPendingReworkItems(SelectedAssembly.AssemblyId);
 
         public bool CanSendToTest =>
-            (SessionContext.IsAssembler || SessionContext.IsAdmin) &&
+            SessionContext.IsAssembler &&
             SelectedAssembly?.Status == AssemblyStatus.ReadyForTest;
 
         public bool CanRework =>
@@ -209,11 +209,11 @@ namespace МаршрутСборки.ViewModels
              HasPendingReworkItems(SelectedAssembly.AssemblyId));
 
         public bool CanEdit =>
-            (SessionContext.IsAdmin || SessionContext.IsDispatcher) &&
+            SessionContext.IsDispatcher &&
             SelectedAssembly?.Status == AssemblyStatus.New;
 
         public bool CanDelete =>
-            SessionContext.IsAdmin && SelectedAssembly != null;
+            SessionContext.IsDispatcher && SelectedAssembly != null;
 
         public ICommand CreateCommand { get; }
         public ICommand EditCommand { get; }

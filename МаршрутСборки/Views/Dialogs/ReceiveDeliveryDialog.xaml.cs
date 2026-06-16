@@ -3,6 +3,7 @@ using МаршрутСборки.Data;
 using МаршрутСборки.Helpers;
 using МаршрутСборки.Models;
 using МаршрутСборки.Services;
+using System.Linq;
 
 namespace МаршрутСборки.Views.Dialogs
 {
@@ -23,8 +24,29 @@ namespace МаршрутСборки.Views.Dialogs
         {
             if (!int.TryParse(QuantityBox.Text, out int qty) || qty < 1)
             {
-                MessageBox.Show("Введите корректное количество",
+                MessageBox.Show("Введите корректное количество.",
                     "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            var docRef = DocumentRefBox.Text.Trim();
+            if (string.IsNullOrWhiteSpace(docRef))
+            {
+                MessageBox.Show("Номер накладной обязателен для заполнения.",
+                    "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            var ctx = new AppDbContext();
+            bool alreadyExists = ctx.WarehouseOperations.Any(o =>
+                o.OperationType == OperationType.Receipt &&
+                o.DocumentRef == docRef);
+            if (alreadyExists)
+            {
+                MessageBox.Show(
+                    $"Накладная «{docRef}» уже зарегистрирована в системе.\n" +
+                    "Проверьте номер документа — дублирование недопустимо.",
+                    "Дублирование накладной", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -32,7 +54,7 @@ namespace МаршрутСборки.Views.Dialogs
                 _component.ComponentId,
                 qty,
                 SessionContext.CurrentUser!.UserId,
-                DocumentRefBox.Text
+                docRef
             );
 
             DialogResult = true;

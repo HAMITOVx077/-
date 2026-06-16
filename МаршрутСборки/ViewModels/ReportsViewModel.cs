@@ -51,8 +51,8 @@ namespace МаршрутСборки.ViewModels
         private int _shippedAssemblies;
         private int _lowStockCount;
         private int _openWarrantyCases;
-        private DateTime _dateFrom = DateTime.Today.AddMonths(-1);
-        private DateTime _dateTo = DateTime.Today;
+        private DateTime _dateFrom = new DateTime(2026, 4, 1);
+        private DateTime _dateTo = new DateTime(2026, 6, 30);
         private User? _selectedAssemblerFilter;
 
         public int TotalAssemblies

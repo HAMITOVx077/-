@@ -54,9 +54,10 @@ namespace МаршрутСборки.ViewModels
             }
         }
 
-        public bool CanDelete => SessionContext.IsAdmin;
+        public bool CanDelete => SessionContext.IsWarrantyEngineer;
 
         public bool CanAssignRework =>
+            SessionContext.IsWarrantyEngineer &&
             SelectedCase != null &&
             SelectedCase.Status != WarrantyStatus.ReadyForPickup &&
             SelectedCase.Status != WarrantyStatus.Closed;
@@ -67,11 +68,13 @@ namespace МаршрутСборки.ViewModels
                 : "🔧 Назначить переделку";
 
         public bool CanAddNote =>
+            SessionContext.IsWarrantyEngineer &&
             SelectedCase != null &&
             SelectedCase.Status != WarrantyStatus.ReadyForPickup &&
             SelectedCase.Status != WarrantyStatus.Closed;
 
         public bool CanCloseCase =>
+            SessionContext.IsWarrantyEngineer &&
             SelectedCase != null &&
             SelectedCase.Status == WarrantyStatus.ReadyForPickup;
 
@@ -85,13 +88,13 @@ namespace МаршрутСборки.ViewModels
         public WarrantyViewModel()
         {
             LoadCommand       = new RelayCommand(_ => Load());
-            CreateCommand     = new RelayCommand(_ => Create());
+            CreateCommand     = new RelayCommand(_ => Create(), _ => SessionContext.IsWarrantyEngineer);
             AssignReworkCommand = new RelayCommand(_ => AssignRework(), _ => CanAssignRework);
             CloseCaseCommand  = new RelayCommand(_ => CloseCase(), _ => CanCloseCase);
             DeleteCommand     = new RelayCommand(
                 _ => Delete(),
                 _ => SelectedCase != null && CanDelete);
-            AddNoteCommand = new RelayCommand(_ => AddNote());
+            AddNoteCommand = new RelayCommand(_ => AddNote(), _ => CanAddNote);
             Load();
         }
 
