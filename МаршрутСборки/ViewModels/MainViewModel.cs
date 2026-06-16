@@ -96,8 +96,8 @@ namespace МаршрутСборки.ViewModels
                 ViewModel = new AssembliesViewModel()
             });
 
-            // Склад — кладовщик и администратор
-            if (role is "Кладовщик" or "Администратор")
+            // Склад — кладовщик и технический директор
+            if (role is "Кладовщик" or "Технический директор")
                 MenuItems.Add(new MenuItem
                 {
                     Title = "Склад",
@@ -105,8 +105,8 @@ namespace МаршрутСборки.ViewModels
                     ViewModel = new WarehouseViewModel()
                 });
 
-            // Тестирование — тестировщик и администратор
-            if (role is "Тестировщик" or "Администратор")
+            // Тестирование — тестировщик и технический директор
+            if (role is "Тестировщик" or "Технический директор")
                 MenuItems.Add(new MenuItem
                 {
                     Title = "Тестирование",
@@ -114,8 +114,8 @@ namespace МаршрутСборки.ViewModels
                     ViewModel = new TestingViewModel()
                 });
 
-            // Гарантия — гарантийный инженер и администратор
-            if (role is "Гарантийный инженер" or "Администратор")
+            // Гарантия — инженер сервисного центра и технический директор
+            if (role is "Инженер сервисного центра" or "Технический директор")
                 MenuItems.Add(new MenuItem
                 {
                     Title = "Гарантия",
@@ -123,8 +123,8 @@ namespace МаршрутСборки.ViewModels
                     ViewModel = new WarrantyViewModel()
                 });
 
-            // Только администратор
-            if (role == "Администратор")
+            // Только технический директор
+            if (role == "Технический директор")
             {
                 MenuItems.Add(new MenuItem
                 {

@@ -80,12 +80,12 @@ namespace МаршрутСборки.Data
 
             //Seed — роли
             modelBuilder.Entity<Role>().HasData(
-                new Role { RoleId = 1, RoleName = "Администратор" },
+                new Role { RoleId = 1, RoleName = "Технический директор" },
                 new Role { RoleId = 2, RoleName = "Диспетчер" },
                 new Role { RoleId = 3, RoleName = "Сборщик" },
                 new Role { RoleId = 4, RoleName = "Кладовщик" },
                 new Role { RoleId = 5, RoleName = "Тестировщик" },
-                new Role { RoleId = 6, RoleName = "Гарантийный инженер" }
+                new Role { RoleId = 6, RoleName = "Инженер сервисного центра" }
             );
 
             //Seed — администратор по умолчанию
